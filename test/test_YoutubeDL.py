@@ -619,6 +619,17 @@ class TestYoutubeDL(unittest.TestCase):
         self.assertEqual(test_dict['extractor'], 'Foo')
         self.assertEqual(test_dict['playlist'], 'funny videos')
 
+    def test_default_js_runtime_skipped_without_subprocess_support(self):
+        params = {
+            'skip_download': True,
+            'js_runtimes': {'deno': {}},
+            '_js_runtimes_are_default': True,
+        }
+        with patch('yt_dlp.utils._utils.Popen._SUPPORTED', False):
+            with patch.object(YoutubeDL, 'report_warning') as warning_mock:
+                YoutubeDL(params)
+        warning_mock.assert_not_called()
+
     outtmpl_info = {
         'id': '1234',
         'ext': 'mp4',

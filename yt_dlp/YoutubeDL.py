@@ -733,6 +733,8 @@ class YoutubeDL:
 
         # Note: this must be after plugins are loaded
         default_js_runtimes = {} if not Popen.is_supported() else {'deno': {}}
+        if self.params.pop('_js_runtimes_are_default', False) and not Popen.is_supported():
+            self.params.pop('js_runtimes', None)
         self.params['js_runtimes'] = self.params.get('js_runtimes', default_js_runtimes)
         if self.params['js_runtimes'] and not Popen.is_supported():
             self.report_warning(

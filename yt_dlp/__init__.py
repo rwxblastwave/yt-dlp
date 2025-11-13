@@ -783,6 +783,7 @@ def parse_options(argv=None):
     js_runtimes = {
         runtime.lower(): {'path': path} for runtime, path in (
             [*arg.split(':', 1), None][:2] for arg in opts.js_runtimes)}
+    default_js_runtimes_selected = opts.js_runtimes == parser.defaults.get('js_runtimes')
 
     return ParsedOptions(parser, opts, urls, {
         'usenetrc': opts.usenetrc,
@@ -952,6 +953,7 @@ def parse_options(argv=None):
         'geo_bypass_ip_block': opts.geo_bypass_ip_block,
         'useid': opts.useid or None,
         'js_runtimes': js_runtimes,
+        '_js_runtimes_are_default': default_js_runtimes_selected,
         'remote_components': opts.remote_components,
         'warn_when_outdated': opts.update_self is None,
         '_warnings': warnings,
