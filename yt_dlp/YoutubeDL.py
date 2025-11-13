@@ -732,7 +732,12 @@ class YoutubeDL:
                     raise
 
         # Note: this must be after plugins are loaded
-        self.params['js_runtimes'] = self.params.get('js_runtimes', {'deno': {}})
+        default_js_runtimes = {} if not Popen.is_supported() else {'deno': {}}
+        self.params['js_runtimes'] = self.params.get('js_runtimes', default_js_runtimes)
+        if self.params['js_runtimes'] and not Popen.is_supported():
+            self.report_warning(
+                'External JavaScript runtimes are disabled because subprocesses are not supported on this platform')
+            self.params['js_runtimes'] = {}
         self._clean_js_runtimes(self.params['js_runtimes'])
 
         self.params['remote_components'] = set(self.params.get('remote_components', ()))
@@ -863,6 +868,10 @@ class YoutubeDL:
                 f' Supported runtimes: {", ".join(supported_js_runtimes.value.keys())}.')
             for rt in unsupported_runtimes:
                 runtimes.pop(rt)
+        if runtimes and not Popen.is_supported():
+            self.report_warning(
+                'Disabling configured JavaScript runtimes because subprocesses are not supported on this platform')
+            runtimes.clear()
 
     def _clean_remote_components(self, remote_components: set):
         if unsupported_remote_components := set(remote_components) - set(supported_remote_components.value):
