@@ -31,8 +31,6 @@ class JsRuntimeInfo:
 
 
 class JsRuntime(abc.ABC):
-    requires_subprocess = True
-
     def __init__(self, path=None):
         self._path = path
 
@@ -110,25 +108,3 @@ class QuickJsRuntime(JsRuntime):
         return JsRuntimeInfo(
             name='quickjs', path=path, version=version, version_tuple=vt,
             supported=vt >= self.MIN_SUPPORTED_VERSION)
-
-
-class JavaScriptCoreJsRuntime(JsRuntime):
-    requires_subprocess = False
-
-    def _info(self):
-        try:
-            from ._jscore import JavaScriptCoreEvaluator, JavaScriptCoreError
-        except ImportError:
-            return None
-
-        try:
-            evaluator = JavaScriptCoreEvaluator()
-        except JavaScriptCoreError:
-            return None
-        return JsRuntimeInfo(
-            name='javascriptcore',
-            path=evaluator.library_path,
-            version=evaluator.version,
-            version_tuple=evaluator.version_tuple,
-            supported=True,
-        )
