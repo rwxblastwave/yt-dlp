@@ -26,6 +26,7 @@ from yt_dlp.utils import (
     int_or_none,
     match_filter_func,
 )
+from yt_dlp.utils._jsruntime import JsRuntime, JsRuntimeInfo
 from yt_dlp.utils.traversal import traverse_obj
 
 TEST_URL = 'http://localhost/sample.mp4'
@@ -629,6 +630,22 @@ class TestYoutubeDL(unittest.TestCase):
             with patch.object(YoutubeDL, 'report_warning') as warning_mock:
                 YoutubeDL(params)
         warning_mock.assert_not_called()
+
+    def test_javascriptcore_runtime_selected_without_subprocess_support(self):
+        class DummyRuntime(JsRuntime):
+            requires_subprocess = False
+
+            def _info(self):
+                return JsRuntimeInfo('javascriptcore', 'jsc', '1', (1,))
+
+        params = {'skip_download': True}
+        with patch('yt_dlp.utils._utils.Popen._SUPPORTED', False):
+            with patch.dict('yt_dlp.globals.supported_js_runtimes.value', {
+                'javascriptcore': DummyRuntime,
+            }, clear=False):
+                ydl = YoutubeDL(params)
+
+        self.assertEqual(ydl.params['js_runtimes'], {'javascriptcore': {}})
 
     outtmpl_info = {
         'id': '1234',

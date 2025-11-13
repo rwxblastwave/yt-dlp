@@ -67,6 +67,7 @@ from .utils._utils import _UnsafeExtensionError
 from .utils._jsruntime import (
     BunJsRuntime as _BunJsRuntime,
     DenoJsRuntime as _DenoJsRuntime,
+    JavaScriptCoreJsRuntime as _JavaScriptCoreJsRuntime,
     NodeJsRuntime as _NodeJsRuntime,
     QuickJsRuntime as _QuickJsRuntime,
 )
@@ -1102,6 +1103,7 @@ supported_js_runtimes.value['deno'] = _DenoJsRuntime
 supported_js_runtimes.value['node'] = _NodeJsRuntime
 supported_js_runtimes.value['bun'] = _BunJsRuntime
 supported_js_runtimes.value['quickjs'] = _QuickJsRuntime
+supported_js_runtimes.value['javascriptcore'] = _JavaScriptCoreJsRuntime
 
 supported_remote_components.value.append('ejs:github')
 supported_remote_components.value.append('ejs:npm')
