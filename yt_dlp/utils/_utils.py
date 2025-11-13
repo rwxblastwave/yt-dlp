@@ -58,6 +58,14 @@ from ..globals import IN_CLI, WINDOWS_VT_MODE
 __name__ = __name__.rsplit('.', 1)[0]  # noqa: A001 # Pretend to be the parent module
 
 
+def _subprocess_supported():
+    if not callable(getattr(subprocess, 'Popen', None)):
+        return False
+    if sys.platform == 'ios':
+        return False
+    return True
+
+
 class NO_DEFAULT:
     pass
 
@@ -836,6 +844,8 @@ class netrc_from_content(netrc.netrc):
 
 
 class Popen(subprocess.Popen):
+    _SUPPORTED = _subprocess_supported()
+
     if sys.platform == 'win32':
         _startupinfo = subprocess.STARTUPINFO()
         _startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -865,7 +875,13 @@ class Popen(subprocess.Popen):
         _fix('LD_LIBRARY_PATH')  # Linux
         _fix('DYLD_LIBRARY_PATH')  # macOS
 
+    @classmethod
+    def is_supported(cls):
+        return cls._SUPPORTED
+
     def __init__(self, args, *remaining, env=None, text=False, shell=False, **kwargs):
+        if not self._SUPPORTED:
+            raise OSError('External processes are not supported on this platform')
         if env is None:
             env = os.environ.copy()
         self._fix_pyinstaller_issues(env)
@@ -884,7 +900,11 @@ class Popen(subprocess.Popen):
             env['='] = '"^\n\n"'
             args = f'{self.__comspec()} /Q /S /D /V:OFF /E:ON /C "{args}"'
 
-        super().__init__(args, *remaining, env=env, shell=shell, **kwargs, startupinfo=self._startupinfo)
+        try:
+            super().__init__(args, *remaining, env=env, shell=shell, **kwargs, startupinfo=self._startupinfo)
+        except NotImplementedError as err:
+            type(self)._SUPPORTED = False
+            raise OSError('External processes are not supported on this platform') from err
 
     def __comspec(self):
         comspec = os.environ.get('ComSpec') or os.path.join(
@@ -2143,6 +2163,8 @@ replace_extension = functools.partial(_change_extension, False)
 def check_executable(exe, args=[]):
     """ Checks if the given binary is installed somewhere in PATH, and returns its name.
     args can be a list of arguments for a short output (like -version) """
+    if not Popen.is_supported():
+        return False
     try:
         Popen.run([exe, *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except OSError:
@@ -2151,6 +2173,8 @@ def check_executable(exe, args=[]):
 
 
 def _get_exe_version_output(exe, args, ignore_return_code=False):
+    if not Popen.is_supported():
+        return False
     try:
         # STDIN should be redirected too. On UNIX-like systems, ffmpeg triggers
         # SIGTTOU if yt-dlp is run in the background.
