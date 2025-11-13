@@ -732,33 +732,14 @@ class YoutubeDL:
                     raise
 
         # Note: this must be after plugins are loaded
-        if not Popen.is_supported():
-            default_js_runtimes = {}
-            js_core_runtime = supported_js_runtimes.value.get('javascriptcore')
-            if js_core_runtime:
-                try:
-                    runtime = js_core_runtime()
-                except Exception:
-                    runtime = None
-                if runtime and runtime.info:
-                    default_js_runtimes = {'javascriptcore': {}}
-        else:
-            default_js_runtimes = {'deno': {}}
+        default_js_runtimes = {} if not Popen.is_supported() else {'deno': {}}
         if self.params.pop('_js_runtimes_are_default', False) and not Popen.is_supported():
             self.params.pop('js_runtimes', None)
         self.params['js_runtimes'] = self.params.get('js_runtimes', default_js_runtimes)
         if self.params['js_runtimes'] and not Popen.is_supported():
-            unsupported = []
-            for runtime in list(self.params['js_runtimes']):
-                runtime_cls = supported_js_runtimes.value.get(runtime)
-                if getattr(runtime_cls, 'requires_subprocess', True):
-                    unsupported.append(runtime)
-                    self.params['js_runtimes'].pop(runtime, None)
-            if unsupported:
-                runtimes = ', '.join(unsupported)
-                self.report_warning(
-                    'External JavaScript runtimes are disabled because subprocesses are not supported on this platform '
-                    f'(disabled: {runtimes})')
+            self.report_warning(
+                'External JavaScript runtimes are disabled because subprocesses are not supported on this platform')
+            self.params['js_runtimes'] = {}
         self._clean_js_runtimes(self.params['js_runtimes'])
 
         self.params['remote_components'] = set(self.params.get('remote_components', ()))
@@ -890,17 +871,9 @@ class YoutubeDL:
             for rt in unsupported_runtimes:
                 runtimes.pop(rt)
         if runtimes and not Popen.is_supported():
-            unsupported = []
-            for runtime in list(runtimes):
-                runtime_cls = supported_js_runtimes.value.get(runtime)
-                if getattr(runtime_cls, 'requires_subprocess', True):
-                    unsupported.append(runtime)
-                    runtimes.pop(runtime, None)
-            if unsupported:
-                runtimes_list = ', '.join(unsupported)
-                self.report_warning(
-                    'Disabling configured JavaScript runtimes because subprocesses are not supported on this platform '
-                    f'(disabled: {runtimes_list})')
+            self.report_warning(
+                'Disabling configured JavaScript runtimes because subprocesses are not supported on this platform')
+            runtimes.clear()
 
     def _clean_remote_components(self, remote_components: set):
         if unsupported_remote_components := set(remote_components) - set(supported_remote_components.value):
